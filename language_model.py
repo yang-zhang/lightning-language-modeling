@@ -11,9 +11,9 @@ from data import get_loaders
 
 
 class LMDataModule(pl.LightningDataModule):
-    def __init__(self,model_name_or_path,train_file,validation_file,line_by_line,pad_to_max_length,
-                 preprocessing_num_workers,overwrite_cache,max_seq_length,mlm_probability,
-                 train_batch_size,val_batch_size,dataloader_num_workers):
+    def __init__(self, model_name_or_path, train_file, validation_file, line_by_line, pad_to_max_length,
+                 preprocessing_num_workers, overwrite_cache, max_seq_length, mlm_probability,
+                 train_batch_size, val_batch_size, dataloader_num_workers):
         super().__init__()
         self.train_file = train_file
         self.validation_file = validation_file
