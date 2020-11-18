@@ -1,7 +1,7 @@
 # lightning-language-modeling
 Language Modeling Example with [Pytorch Lightning](https://pytorch-lightning.readthedocs.io/en/stable/) and [🤗 Huggingface Transformers](https://huggingface.co/transformers/).
 
-Language modeling fine-tuning adapts a pre-trained language model to the a new domain and benefits downstream tasks such as classification. 
+Language modeling fine-tuning adapts a pre-trained language model to a new domain and benefits downstream tasks such as classification. 
 The script here applies to fine-tuning masked language modeling (MLM) models include ALBERT, BERT, DistilBERT and RoBERTa, on a text dataset. 
 Details about the models can be found in Transformers [model summary](https://huggingface.co/transformers/model_summary.html).
 
@@ -26,7 +26,7 @@ make requirements
 ```
 
 ## Usage of this repo
-To fine-tune a lanuage model, run:
+To fine-tune a language model, run:
 ```bash
 python language_model.py \ 
 --model_name_or_path="The model checkpoint for weights initialization" \
