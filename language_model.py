@@ -74,11 +74,12 @@ class LMModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self.model(**batch).loss
-        return {'loss': loss, 'log': {'train_loss': loss}}
+        self.log('train_loss', loss, on_epoch=True)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         loss = self.model(**batch).loss
-        return {'loss': loss, 'log': {'val_loss': loss}}
+        self.log('valid_loss', loss, on_step=True)
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(),
