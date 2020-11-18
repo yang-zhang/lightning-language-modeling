@@ -20,9 +20,7 @@ Scale your models, not the boilerplate." [Quote from its doc](https://pytorch-li
 
 ## Setup environment
 ```bash
-make create_environment
-conda activate pllm
-make requirements
+pip install -r requirements.txt
 ```
 
 ## Usage of this repo
