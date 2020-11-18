@@ -1,4 +1,4 @@
-# https://github.com/huggingface/transformers/blob/master/examples/language-modeling/run_mlm.py
+# Adapted from https://github.com/huggingface/transformers/blob/master/examples/language-modeling/run_mlm.py
 import warnings
 from datasets import load_dataset
 from transformers import (

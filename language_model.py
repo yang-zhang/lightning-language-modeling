@@ -1,4 +1,4 @@
-from data import get_loaders
+from argparse import ArgumentParser
 import pytorch_lightning as pl
 from torch.utils.data.dataloader import DataLoader
 from transformers import (
@@ -7,22 +7,13 @@ from transformers import (
     AutoConfig,
 )
 from transformers.optimization import AdamW
+from data import get_loaders
 
 
 class LMDataModule(pl.LightningDataModule):
-    def __init__(self,
-                 train_file,
-                 validation_file,
-                 model_name_or_path="distilbert-base-cased",
-                 line_by_line=False,
-                 pad_to_max_length=True,
-                 preprocessing_num_workers=1,
-                 overwrite_cache=True,
-                 max_seq_length=32,
-                 mlm_probability=0.15,
-                 train_batch_size=4,
-                 dataloader_num_workers=4,
-                 val_batch_size=8):
+    def __init__(self,model_name_or_path,train_file,validation_file,line_by_line,pad_to_max_length,
+                 preprocessing_num_workers,overwrite_cache,max_seq_length,mlm_probability,
+                 train_batch_size,val_batch_size,dataloader_num_workers):
         super().__init__()
         self.train_file = train_file
         self.validation_file = validation_file
@@ -34,8 +25,8 @@ class LMDataModule(pl.LightningDataModule):
         self.max_seq_length = max_seq_length
         self.mlm_probability = mlm_probability
         self.train_batch_size = train_batch_size
-        self.dataloader_num_workers = dataloader_num_workers
         self.val_batch_size = val_batch_size
+        self.dataloader_num_workers = dataloader_num_workers
 
     def setup(self, stage):
         self.train_dataset, self.eval_dataset, self.data_collator = get_loaders(
@@ -67,13 +58,7 @@ class LMDataModule(pl.LightningDataModule):
 
 
 class LMModel(pl.LightningModule):
-    def __init__(self,
-                 model_name_or_path="distilbert-base-cased",
-                 learning_rate=5e-5,
-                 adam_beta1=0.9,
-                 adam_beta2=0.999,
-                 adam_epsilon=1e-8,
-                 ):
+    def __init__(self, model_name_or_path, learning_rate, adam_beta1, adam_beta2, adam_epsilon):
         super().__init__()
 
         self.save_hyperparameters()
@@ -103,10 +88,77 @@ class LMModel(pl.LightningModule):
                           eps=self.hparams.adam_epsilon,)
         return optimizer
 
+    @staticmethod
+    def add_model_specific_args(parent_parser):
+        parser = ArgumentParser(parents=[parent_parser], add_help=False)
+        parser.add_argument('--learning_rate', type=float, default=5e-5)
+        parser.add_argument('--adam_beta1', type=float, default=0.9)
+        parser.add_argument('--adam_beta2', type=float, default=0.999)
+        parser.add_argument('--adam_epsilon', type=float, default=1e-8)
+        return parser
 
-data_module = LMDataModule(train_file='data/wikitext-2/wiki.valid.raw',
-                           validation_file='data/wikitext-2/wiki.test.raw')
-lmmodel = LMModel()
 
-trainer = pl.Trainer(fast_dev_run=True, gpus=1)
-trainer.fit(lmmodel, data_module)
+def cli_main():
+    pl.seed_everything(1234)
+
+    # ------------
+    # args
+    # ------------
+    parser = ArgumentParser()
+    parser.add_argument('--model_name_or_path', type=str,
+                        default="distilbert-base-cased")
+    parser.add_argument('--train_file', type=str,
+                        default="data/wikitext-2/wiki.train.small.raw")
+    parser.add_argument('--validation_file', type=str,
+                        default="data/wikitext-2/wiki.valid.small.raw")
+    parser.add_argument('--line_by_line', type=bool, default=False)
+    parser.add_argument('--pad_to_max_length', type=bool, default=True)
+    parser.add_argument('--preprocessing_num_workers', type=int, default=4)
+    parser.add_argument('--overwrite_cache', type=bool, default=True)
+    parser.add_argument('--max_seq_length', type=int, default=32)
+    parser.add_argument('--mlm_probability', type=float, default=0.15)
+    parser.add_argument('--train_batch_size', type=int, default=4)
+    parser.add_argument('--val_batch_size', type=int, default=8)
+    parser.add_argument('--dataloader_num_workers', type=int, default=4)
+    parser = pl.Trainer.add_argparse_args(parser)
+    parser = LMModel.add_model_specific_args(parser)
+    args = parser.parse_args()
+
+    # ------------
+    # data
+    # ------------
+    data_module = LMDataModule(
+        model_name_or_path=args.model_name_or_path,
+        train_file=args.train_file,
+        validation_file=args.validation_file,
+        line_by_line=args.line_by_line,
+        pad_to_max_length=args.pad_to_max_length,
+        preprocessing_num_workers=args.preprocessing_num_workers,
+        overwrite_cache=args.overwrite_cache,
+        max_seq_length=args.max_seq_length,
+        mlm_probability=args.mlm_probability,
+        train_batch_size=args.train_batch_size,
+        val_batch_size=args.val_batch_size,
+        dataloader_num_workers=args.dataloader_num_workers,
+    )
+
+    # ------------
+    # model
+    # ------------
+    lmmodel = LMModel(
+        model_name_or_path=args.model_name_or_path,
+        learning_rate=args.learning_rate,
+        adam_beta1=args.adam_beta1,
+        adam_beta2=args.adam_beta2,
+        adam_epsilon=args.adam_epsilon,
+    )
+
+    # ------------
+    # training
+    # ------------
+    trainer = pl.Trainer.from_argparse_args(args)
+    trainer.fit(lmmodel, data_module)
+
+
+if __name__ == '__main__':
+    cli_main()
