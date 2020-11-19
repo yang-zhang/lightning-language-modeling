@@ -1,60 +1,12 @@
 from argparse import ArgumentParser
 import pytorch_lightning as pl
-from torch.utils.data.dataloader import DataLoader
 from transformers import (
     AutoModelForMaskedLM,
     AutoTokenizer,
     AutoConfig,
 )
 from transformers.optimization import AdamW
-from data import get_loaders
-
-
-class LMDataModule(pl.LightningDataModule):
-    def __init__(self, model_name_or_path, train_file, validation_file, line_by_line, pad_to_max_length,
-                 preprocessing_num_workers, overwrite_cache, max_seq_length, mlm_probability,
-                 train_batch_size, val_batch_size, dataloader_num_workers):
-        super().__init__()
-        self.train_file = train_file
-        self.validation_file = validation_file
-        self.model_name_or_path = model_name_or_path
-        self.line_by_line = line_by_line
-        self.pad_to_max_length = pad_to_max_length
-        self.preprocessing_num_workers = preprocessing_num_workers
-        self.overwrite_cache = overwrite_cache
-        self.max_seq_length = max_seq_length
-        self.mlm_probability = mlm_probability
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
-        self.dataloader_num_workers = dataloader_num_workers
-
-    def setup(self, stage):
-        self.train_dataset, self.eval_dataset, self.data_collator = get_loaders(
-            self.train_file,
-            self.validation_file,
-            self.model_name_or_path,
-            self.line_by_line,
-            self.pad_to_max_length,
-            self.preprocessing_num_workers,
-            self.overwrite_cache,
-            self.max_seq_length,
-            self.mlm_probability)
-
-    def train_dataloader(self):
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.train_batch_size,
-            collate_fn=self.data_collator,
-            num_workers=self.dataloader_num_workers,
-        )
-
-    def val_dataloader(self):
-        return DataLoader(
-            self.eval_dataset,
-            batch_size=self.val_batch_size,
-            collate_fn=self.data_collator,
-            num_workers=self.dataloader_num_workers,
-        )
+from data import LMDataModule
 
 
 class LMModel(pl.LightningModule):
@@ -112,10 +64,10 @@ def cli_main():
                         default="data/wikitext-2/wiki.train.small.raw")
     parser.add_argument('--validation_file', type=str,
                         default="data/wikitext-2/wiki.valid.small.raw")
-    parser.add_argument('--line_by_line', type=bool, default=False)
-    parser.add_argument('--pad_to_max_length', type=bool, default=True)
+    parser.add_argument('--line_by_line', action='store_true', default=False)
+    parser.add_argument('--pad_to_max_length', action='store_true', default=False)
     parser.add_argument('--preprocessing_num_workers', type=int, default=4)
-    parser.add_argument('--overwrite_cache', type=bool, default=True)
+    parser.add_argument('--overwrite_cache', action='store_true', default=False)
     parser.add_argument('--max_seq_length', type=int, default=32)
     parser.add_argument('--mlm_probability', type=float, default=0.15)
     parser.add_argument('--train_batch_size', type=int, default=4)
